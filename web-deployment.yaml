@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: synergychat-web
+  labels:
+    app: synergychat-web
+spec:
+  replicas: 1 # Or 3, based on the error output, adjust as needed
+  selector:
+    matchLabels:
+      app: synergychat-web
+  template:
+    metadata:
+      labels:
+        app: synergychat-web
+    spec:
+      containers:
+      - name: synergychat-web # <--- Container definition starts here
+        image: docker.io/bootdotdev/synergychat-web:latest
+        ports:
+        - containerPort: 80
+        envFrom: # <--- CORRECT! envFrom is inside the container definition
+        - configMapRef: # <--- This is an item in the list, starts with '-'
+            name: web-configmap # <--- 'name' is nested under 'configMapRef'
+      # If you had other containers, they would be listed here starting with '-'

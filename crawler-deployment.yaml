@@ -1,0 +1,92 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: synergychat-crawler
+  labels:
+    app: synergychat-crawler
+  namespace: crawler
+spec:
+  replicas: 1 # You can adjust the number of replicas here
+  selector:
+    matchLabels:
+      app: synergychat-crawler
+  template:
+    metadata:
+      labels:
+        app: synergychat-crawler
+    spec:
+      containers: # This is the list of containers for the pod
+      - name: synergychat-crawler-1 # <--- Start of the first container definition
+        image: bootdotdev/synergychat-crawler:latest # <--- Container image
+        ports: # Optional: If your container exposes ports
+        - containerPort: 80 # Example port definition (adjust if needed)
+        env: # <--- Using 'env' for specific variables for container 1
+        - name: CRAWLER_PORT # <--- Environment variable name inside the container
+          valueFrom:
+            configMapKeyRef:
+              name: synergychat-crawler-configmap # <--- Name of the ConfigMap
+              key: CRAWLER_PORT # <--- Key from the ConfigMap
+        - name: CRAWLER_KEYWORDS # <--- CRAWLER_KEYWORDS env var for container 1
+          valueFrom:
+            configMapKeyRef:
+              name: synergychat-crawler-configmap
+              key: CRAWLER_KEYWORDS
+        volumeMounts: # <--- Correctly placed inside the container definition for container 1
+        - name: cache-volume # <--- Item in the volumeMounts list, starts with '-'
+          mountPath: /cache # <--- 'mountPath' is nested under the volume mount item
+        - name: synergychat-api-volume
+          mountPath: /persist
+        # Add other container properties here if needed (e.g., resources, livenessProbe, readinessProbe)
+
+      - name: synergychat-crawler-2 # <--- Start of the second container definition
+        image: bootdotdev/synergychat-crawler:latest # <--- Container image
+        ports: # Optional: If your container exposes ports
+        - containerPort: 80 # Example port definition (adjust if needed)
+        env: # <--- Using 'env' for specific variables for container 2
+        - name: CRAWLER_PORT # <--- Environment variable name inside the container (same name)
+          valueFrom:
+            configMapKeyRef:
+              name: synergychat-crawler-configmap # <--- Name of the ConfigMap
+              key: CRAWLER_PORT_2 # <--- DIFFERENT Key from the ConfigMap for this container
+        - name: CRAWLER_KEYWORDS # <--- CRAWLER_KEYWORDS env var for container 2
+          valueFrom:
+            configMapKeyRef:
+              name: synergychat-crawler-configmap
+              key: CRAWLER_KEYWORDS
+        volumeMounts: # <--- Correctly placed inside the container definition for container 2
+        - name: cache-volume # <--- Item in the volumeMounts list, starts with '-'
+          mountPath: /cache # <--- 'mountPath' is nested under the volume mount item
+        - name: synergychat-api-volume
+          mountPath: /persist
+# Add other container properties here if needed
+
+      - name: synergychat-crawler-3 # <--- Start of the third container definition
+        image: bootdotdev/synergychat-crawler:latest # <--- Container image
+        ports: # Optional: If your container exposes ports
+        - containerPort: 80 # Example port definition (adjust if needed)
+        env: # <--- Using 'env' for specific variables for container 3
+        - name: CRAWLER_PORT # <--- Environment variable name inside the container
+          valueFrom:
+            configMapKeyRef:
+              name: synergychat-crawler-configmap # <--- Name of the ConfigMap
+              key: CRAWLER_PORT_3 # <--- Key from the ConfigMap (same as container 1)
+        - name: CRAWLER_KEYWORDS # <--- CRAWLER_KEYWORDS env var for container 3
+          valueFrom:
+            configMapKeyRef:
+              name: synergychat-crawler-configmap
+              key: CRAWLER_KEYWORDS
+        volumeMounts: # <--- Correctly placed inside the container definition for container 3
+        - name: cache-volume # <--- Item in the volumeMounts list, starts with '-'
+          mountPath: /cache # <--- 'mountPath' is nested under the volume mount item
+        - name: synergychat-api-volume
+          mountPath: /persist
+        # Add other container properties here if needed
+
+      # Define volumes at the Pod spec level (spec.template.spec) if using volumeMounts
+      volumes:
+      - name: cache-volume # <--- This volume name must match the volumeMounts name
+        emptyDir: {} # Example: Use an emptyDir volume for caching (adjust type if needed)
+      - name: synergychat-api-volume
+        persistentVolumeClaim:
+          claimName: synergychat-api-pvc
+
